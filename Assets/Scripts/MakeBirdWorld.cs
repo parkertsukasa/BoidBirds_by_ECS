@@ -164,7 +164,7 @@ public sealed class BoidBirds : JobComponentSystem
     return boidJob.Schedule(boidJob.chunks.Length, 16, inputDeps);
   }
 
-//  [BurstCompile(Accuracy.Med, Support.Relaxed)]
+  //[BurstCompile(Accuracy.Med, Support.Relaxed)]
   struct BoidJob : IJobParallelFor
   {
     [ReadOnly] [DeallocateOnJobCompletion] public NativeArray<ArchetypeChunk> chunks;
@@ -181,110 +181,106 @@ public sealed class BoidBirds : JobComponentSystem
       var positions = chunk.GetNativeArray(positionType);
       var positionPtr = (Position*)positions.GetUnsafePtr();
       var rotations = chunk.GetNativeArray(rotationType);
+      var rotationPtr = (Rotation*)rotations.GetUnsafePtr();
       var moveVectors = chunk.GetNativeArray(moveVectorType);
+      var moveVectorPtr = (MoveVector*)moveVectors.GetUnsafePtr();
 
-
-      for (int c = 0; c < chunk.Count; c++ ,positionPtr++)
+      for (int c = 0; c < chunk.Count; c++, positionPtr++, rotationPtr++, moveVectorPtr++)
       {
         Calc calc = new Calc();
 
-        for (int i = 0; i < chunk.Count; i++)
-        {
-          // --- 各要素のベクトル定義 ---
-          float3 cohesionDesire = float3.zero;
-          float3 separationDesire = float3.zero;
-          float3 alignmentDesire = float3.zero;
+        // --- 各要素のベクトル定義 ---
+        float3 cohesionDesire = float3.zero;
+        float3 separationDesire = float3.zero;
+        float3 alignmentDesire = float3.zero;
 
-          // --- Boidアルゴリズムを用いて移動欲求を決める ---
-          for (int j = 0; j < chunk.Count; j++)
-          {          
-            var myPosition = positions[i];
+        var myPosition = positionPtr->Value;
 
-            if (i != j)
-            {
-              var tempPosition = positions[j];
-              // --- 差分ベクトルを求める ---
-              var diffPosition = new Position();
-              diffPosition.Value = tempPosition.Value - myPosition.Value;
+        // --- Boidアルゴリズムを用いて移動欲求を決める ---
+        for (int j = 0; j < chunk.Count; j++)
+        {          
+          if (c != j)
+          {
+            var tempPosition = positions[j];
+            // --- 差分ベクトルを求める ---
+            var diffPosition = new float3();
+            diffPosition = tempPosition.Value - myPosition;
 
-              // --- ベクトルの長さを求める ---
-              float length = calc.GetVectorLength(diffPosition.Value);
+            // --- ベクトルの長さを求める ---
+            float length = calc.GetVectorLength(diffPosition);
 
-              // --- Cohesion ---
-              cohesionDesire += diffPosition.Value;
-              float kCohesion = 0.01f * Time.deltaTime;
-              cohesionDesire *= kCohesion;
+            // --- Cohesion ---
+            cohesionDesire += diffPosition;
+            float kCohesion = 0.01f * Time.deltaTime;
+            cohesionDesire *= kCohesion;
 
-              // --- Separation ---
-              separationDesire += ((diffPosition.Value / length) * -1);
-              float kSeparation = 0.1f * Time.deltaTime;
-              separationDesire *= kSeparation;
+            // --- Separation ---
+            separationDesire += ((diffPosition / length) * -1);
+            float kSeparation = 0.1f * Time.deltaTime;
+            separationDesire *= kSeparation;
 
-              // --- Alignment ---
-              var tempMoveVector = moveVectors[j];
-              alignmentDesire += tempMoveVector.Value;
-              float kAlignment = (1.0f * Time.deltaTime);
-              alignmentDesire *= kAlignment;
-            }
-
-            // --- 移動欲求を移動ベクトルに反映させる ---
-            float3 moveDesire = cohesionDesire + separationDesire + alignmentDesire;
-
-            // ----- 基礎情報の計算 -----
-            var myMoveVector =  moveVectors[i];
-
-            // 鳥の正面ベクトルのXZ平面における長さ
-            float forwardLengthXZ = calc.GetVector2Length(myMoveVector.Value.x, myMoveVector.Value.z);
-            // 鳥の正面ベクトルのYZ平面における長さ
-            float forwardLengthYZ = calc.GetVector2Length(myMoveVector.Value.y, myMoveVector.Value.z);
-
-            // 鳥の移動欲求のXZ平面における長さ
-            float moveDesireLengthXZ = calc.GetVector2Length(moveDesire.x, moveDesire.z);
-            // 鳥の移動欲求のYZ平面における長さ
-            float moveDesireLengthYZ = calc.GetVector2Length(moveDesire.y, moveDesire.z);
-
-            // --- Yawを計算 ---
-            float yawF = math.atan2(myMoveVector.Value.x, myMoveVector.Value.z);
-            float yawM = math.atan2(moveDesire.x, moveDesire.z);
-            float yawDiff = yawM - yawF;
-            float kYaw = 0.1f;
-            yawDiff *= kYaw;
-            float newYaw = yawF + yawDiff;
-
-            // --- Pitchを計算 ---
-            float pitchF = math.atan2(myMoveVector.Value.y, forwardLengthXZ);
-            float pitchM = math.atan2(moveDesire.y, moveDesireLengthXZ);
-            float pitchDiff = pitchM - pitchF;
-            float kPitch = 0.1f;
-            pitchDiff *= kPitch;
-            float newPitch = pitchF + pitchDiff;
-
-            // --- 計算した角度を元にベクトルを再構築 ---
-            float3 moveDirection;
-            moveDirection.x = math.sin(newYaw) * forwardLengthXZ;
-            moveDirection.z = math.cos(newYaw) * forwardLengthXZ;
-            moveDirection.y = math.sin(newPitch) * forwardLengthYZ;
-
-
-            // --- 進行方向を向かせる ---
-            float rotX = math.atan2(moveVectors[i].Value.y, 
-                  calc.GetVector2Length(moveVectors[i].Value.x, moveVectors[i].Value.z));
-            float rotY  = math.atan2(moveVectors[i].Value.x, moveVectors[i].Value.z);
-
-            // --- ラジアンからの変換 ---
-            rotX = calc.Rad2Deg(rotX);
-            rotY = calc.Rad2Deg(rotY);
-
-            // --- 反映 ---
-            var rotationValue = rotations[i];
-            rotationValue.Value = Quaternion.Euler(rotX, rotY, 0.0f);
-            rotations[i] = rotationValue;
-
-            myPosition.Value += moveDirection;
-            positions[i] = myPosition;
-            moveVectors[i] = new MoveVector(moveDirection);
+            // --- Alignment ---
+            var tempMoveVector = moveVectors[j];
+            alignmentDesire += tempMoveVector.Value;
+            float kAlignment = (1.0f * Time.deltaTime);
+            alignmentDesire *= kAlignment;
           }
         }
+
+        // --- 移動欲求を移動ベクトルに反映させる ---
+        float3 moveDesire = cohesionDesire + separationDesire + alignmentDesire;
+
+        // ----- 基礎情報の計算 -----
+        var myMoveVector =  moveVectorPtr;
+
+        // 鳥の正面ベクトルのXZ平面における長さ
+        float forwardLengthXZ = calc.GetVector2Length(myMoveVector->Value.x, myMoveVector->Value.z);
+        // 鳥の正面ベクトルのYZ平面における長さ
+        float forwardLengthYZ = calc.GetVector2Length(myMoveVector->Value.y, myMoveVector->Value.z);
+
+        // 鳥の移動欲求のXZ平面における長さ
+        float moveDesireLengthXZ = calc.GetVector2Length(moveDesire.x, moveDesire.z);
+        // 鳥の移動欲求のYZ平面における長さ
+        float moveDesireLengthYZ = calc.GetVector2Length(moveDesire.y, moveDesire.z);
+
+        // --- Yawを計算 ---
+        float yawF = math.atan2(myMoveVector->Value.x, myMoveVector->Value.z);
+        float yawM = math.atan2(moveDesire.x, moveDesire.z);
+        float yawDiff = yawM - yawF;
+        float kYaw = 0.1f;
+        yawDiff *= kYaw;
+        float newYaw = yawF + yawDiff;
+
+        // --- Pitchを計算 ---
+        float pitchF = math.atan2(myMoveVector->Value.y, forwardLengthXZ);
+        float pitchM = math.atan2(moveDesire.y, moveDesireLengthXZ);
+        float pitchDiff = pitchM - pitchF;
+        float kPitch = 0.1f;
+        pitchDiff *= kPitch;
+        float newPitch = pitchF + pitchDiff;
+
+        // --- 計算した角度を元にベクトルを再構築 ---
+        float3 moveDirection;
+        moveDirection.x = math.sin(newYaw) * forwardLengthXZ;
+        moveDirection.z = math.cos(newYaw) * forwardLengthXZ;
+        moveDirection.y = math.sin(newPitch) * forwardLengthYZ;
+
+        //--- 移動の反映 ---
+        myPosition += moveDirection;
+        positionPtr->Value = myPosition;
+        moveVectorPtr->Value = new MoveVector(moveDirection).Value;
+
+        // --- 進行方向を向かせる ---
+        float rotX = math.atan2(moveDirection.y, 
+              calc.GetVector2Length(moveDirection.x, moveDirection.z));
+        float rotY  = math.atan2(moveDirection.x, moveDirection.z);
+
+        // --- ラジアンからの変換 ---
+        rotX = calc.Rad2Deg(rotX);
+        rotY = calc.Rad2Deg(rotY);
+
+        // --- 角度の反映 ---
+        rotationPtr->Value = Quaternion.Euler(rotX, rotY, 0.0f);
       }
     }
   }
@@ -324,3 +320,5 @@ public class Calc
   // ----- ラジアンから度数への変換 -----
   public float Rad2Deg(float rad) => (rad * 180.0f) / (float)math.PI;
 }
+
+// --- End of Source File ---
