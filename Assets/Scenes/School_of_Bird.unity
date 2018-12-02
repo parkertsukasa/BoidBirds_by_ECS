@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028334, g: 0.22571334, b: 0.3069219, a: 1}
+  m_IndirectSpecularColor: {r: 0.12435019, g: 0.12987565, b: 0.11515965, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -174,13 +174,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 871050681}
-  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
+  m_LocalRotation: {x: -0.0029074566, y: -0.25881788, z: -0.00077904656, w: 0.9659215}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: -0.34500003, y: -30.000002, z: 0}
 --- !u!1 &928658186
 GameObject:
   m_ObjectHideFlags: 0
@@ -218,7 +218,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_SensorSize: {x: 36, y: 24}
   m_LensShift: {x: 0, y: 0}
@@ -276,6 +276,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01bdbd68e4868483a9b654654d978bf3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberBird: 1000
   birdMesh: {fileID: 4300000, guid: 175febab25a133545bb941cb948a5bf3, type: 3}
   birdMaterial: {fileID: 2100000, guid: abfca33c3a44e4b79add5b46a10788fe, type: 2}
