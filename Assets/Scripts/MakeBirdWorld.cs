@@ -11,9 +11,14 @@ using Unity.Collections;
  */
 public struct MoveVector : IComponentData
 {
-  public float3 Value;
-  public MoveVector(float3 value) => Value = value;
+  public float3 Value {get;}
+  public float3 Desire {get;}
 
+  public MoveVector(float3 value, float3 desire)
+  {
+    Value = value;
+    Desire = desire;
+  }
 }
 
 [RequireComponent(typeof(Camera))]
@@ -107,7 +112,7 @@ public class MakeBirdWorld : MonoBehaviour
        */
       manager.SetComponentData(prefabEntity, new Position() { Value = float3.zero });
       manager.SetComponentData(prefabEntity, new Rotation() { Value = Quaternion.identity });
-      manager.SetComponentData(prefabEntity, new MoveVector(new  float3(0.0f, 0.0f, 1.0f * Time.deltaTime)));
+      manager.SetComponentData(prefabEntity, new MoveVector(new  float3(0.0f, 0.0f, 1.0f * Time.deltaTime), new float3(0, 0, 1)));
 
       manager.SetSharedComponentData(prefabEntity, new MeshInstanceRenderer()
       {
@@ -227,7 +232,7 @@ public sealed class BoidBirds : ComponentSystem
         float kAlignment = 7.0f / number;
         alignmentDesire *= kAlignment;
 
-        float kHungry = 0.1f / number;
+        float kHungry = 1.0f / number;
         hungryDesire *= kHungry;
 
 
@@ -264,16 +269,19 @@ public sealed class BoidBirds : ComponentSystem
         float newPitch = pitchF + pitchDiff;
 
         // --- 速度の調整 ---
-        float maxSpeed = 3.0f;
-        float nowVelocityXZ = forwardLengthXZ * math.cos(yawMove);
+        float maxSpeed = 1.0f;
+        float kThrust = -10.0f * Time.deltaTime;
+        float preDesireLengthXZ = calc.GetVector2Length(myMoveVector.Desire.x, myMoveVector.Desire.z);
+        float nowVelocityXZ = preDesireLengthXZ * math.cos(yawMove);
         float desireVelocityXZ = moveDesireLengthXZ * math.cos(yawMove);
         float thrustXZ = desireVelocityXZ - nowVelocityXZ;
-        forwardLengthXZ += thrustXZ * 1.0f * Time.deltaTime;
+        forwardLengthXZ += thrustXZ * kThrust;
         
-        float nowVelocityYZ = forwardLengthYZ * math.sin(pitchMove);
+        float preDesireLengthYZ = calc.GetVector2Length(myMoveVector.Desire.y, myMoveVector.Desire.z);
+        float nowVelocityYZ = preDesireLengthYZ * math.sin(pitchMove);
         float desireVelocityYZ = moveDesireLengthYZ * math.sin(pitchMove);
         float thrustYZ = desireVelocityYZ - nowVelocityYZ;
-        forwardLengthYZ += thrustYZ * 1.0f * Time.deltaTime;
+        forwardLengthYZ += thrustYZ * kThrust;
 
         if (maxSpeed < forwardLengthXZ)
           forwardLengthXZ = maxSpeed;
@@ -321,7 +329,7 @@ public sealed class BoidBirds : ComponentSystem
 
         myPosition.Value += moveDirection;
         positions[i] = myPosition;
-        moveVectors[i] = new MoveVector(moveDirection);
+        moveVectors[i] = new MoveVector(moveDirection, moveDesire);
       }
     }
   
