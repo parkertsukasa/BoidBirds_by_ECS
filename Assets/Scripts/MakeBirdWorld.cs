@@ -26,7 +26,7 @@ public class MakeBirdWorld : MonoBehaviour
 {
 
   [SerializeField]
-  private static int numberBird = 700;
+  private static int numberBird = 500;
   
   public static int NumberBird { get => numberBird; set => numberBird = value; }
 
@@ -99,6 +99,7 @@ public class MakeBirdWorld : MonoBehaviour
         ComponentType.Create<Position>(), 
         ComponentType.Create<Rotation>(),
         ComponentType.Create<MoveVector>(),
+        ComponentType.Create<Animation>(),
         ComponentType.Create<MeshInstanceRenderer>()
         );
 
@@ -113,6 +114,13 @@ public class MakeBirdWorld : MonoBehaviour
       manager.SetComponentData(prefabEntity, new Position() { Value = float3.zero });
       manager.SetComponentData(prefabEntity, new Rotation() { Value = Quaternion.identity });
       manager.SetComponentData(prefabEntity, new MoveVector(new  float3(0.0f, 0.0f, 1.0f * Time.deltaTime), new float3(0, 0, 1)));
+
+/*
+      manager.SetComponentData(prefabEntity, new Animation()
+      {
+        clip = Resources.Load()
+      };
+      */
 
       manager.SetSharedComponentData(prefabEntity, new MeshInstanceRenderer()
       {
