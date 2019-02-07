@@ -310,21 +310,9 @@ public sealed class BoidBirds : ComponentSystem
         float rotZ = yawMove * -0.2f;
 
         // --- ラジアンからの変換 ---
-        if (rotX == 0.0f)
-          rotX = 0.01f;
-        else
-          rotX = calc.Rad2Deg(rotX);
-        
-        if (rotY == 0.0f)
-          rotY = 0.01f;
-        else
-          rotY = calc.Rad2Deg(rotY);
-
-        if (rotZ == 0.0f)
-          rotZ = 0.01f;
-        else
-          rotZ = calc.Rad2Deg(rotZ);
-
+        rotX = calc.Rad2Deg(rotX);
+        rotY = calc.Rad2Deg(rotY);
+        rotZ = calc.Rad2Deg(rotZ);
 
         // --- 反映 ---
         var rotationValue = rotations[i];
@@ -346,8 +334,24 @@ public sealed class BoidBirds : ComponentSystem
   }
 }
 
+/* -------------------- BirdAnimation --------------------
+ * 鳥の3DモデルにAnimationをつけるコンポーネント
+ */
+public sealed class BirdAnimation : ComponentSystem
+{
+
+  //private Animation animation = this.gameObject.AddComponent<Animation>();
+
+
+
+  protected override void OnUpdate()
+  {
+    
+  }
+}
+
 /* --------------------- Calc --------------------
- * 計算関係の関数を置いておく関数
+ * 計算関係の関数を置いておくクラス
  */
 public class Calc
 {
@@ -377,6 +381,12 @@ public class Calc
     return length;
   }
 
-// ----- ラジアンから度数への変換 -----
-public float Rad2Deg(float rad) => (rad * 180.0f) / (float)math.PI;
+  // ----- ラジアンから度数への変換 -----
+  public float Rad2Deg(float rad) 
+  {
+    if (rad == 0.0f)
+      return 0.01f;
+
+    return (rad * 180.0f) / (float)math.PI;
+  }
 }
