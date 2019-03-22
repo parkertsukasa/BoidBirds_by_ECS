@@ -51,7 +51,7 @@ public class BoidMove : MonoBehaviour
         // --- 差分ベクトルの長さを求める ---
         float diffLength = calc.GetVectorLength(diffVector);
 
-        if (diffLength < 18.0f)
+        if (diffLength < 30.0f)
         {
           //  --- それぞれの欲求に合算する ---
           cohesionDesire += diffVector;
@@ -63,9 +63,9 @@ public class BoidMove : MonoBehaviour
       }
     }
     // --- 餌に向かう ---
-    hungryDesire = InstanceBird.birds[id].position;
+    hungryDesire = float3.zero - InstanceBird.birds[id].position;
 
-    float kHungry = 0.0f / InstanceBird.number;
+    float kHungry = 0.0f;// / InstanceBird.number;
       hungryDesire *= kHungry;
 
     float3 moveDesire = hungryDesire;
